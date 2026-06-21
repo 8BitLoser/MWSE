@@ -13,7 +13,7 @@ Button.buttonText = "---"
 --- Determines what text is displayed on the button
 --- @return string buttonText
 function Button:getText()
-	if self.variable then
+	if not self.buttonText and self.variable then
 		return tostring(self:convertToLabelValue(self.variable.value))
 	end
 	return self.buttonText
