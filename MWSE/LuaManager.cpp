@@ -243,6 +243,7 @@
 #include "LuaInfoGetTextEvent.h"
 #include "LuaInfoLinkResolveEvent.h"
 #include "LuaInfoResponseEvent.h"
+#include "LuaItemAddedEvent.h"
 #include "LuaItemDroppedEvent.h"
 #include "LuaItemTileUpdatedEvent.h"
 #include "LuaKeyDownEvent.h"
@@ -3134,6 +3135,49 @@ namespace mwse::lua {
 		return _this->findDialogue(topic);
 	}
 
+	///
+	/// Event: Item Added.
+	/// 
+
+	void __fastcall OnItemAdded(TES3::Inventory *inv, void *, TES3::MobileActor * mobileActor, TES3::PhysicalObject *obj, int initialCount, bool initialOverwrite, TES3::ItemData **dataRef) {
+		int count = initialCount;
+		bool overwrite = initialOverwrite;
+		if (event::ItemAddedEvent::getEventEnabled()) {
+			sol::object eventResult = LuaManager::getInstance().getThreadSafeStateHandle().triggerEvent(new event::ItemAddedEvent(mobileActor, obj, initialCount, initialOverwrite, dataRef));
+			//// Have to figure out a way to get tiles to update properly before this can be allowed
+			/*if (eventResult.valid()) {
+				sol::table eventData = eventResult;
+				count = getOptionalParam<int>(eventData, "count", initialCount);
+				overwrite = getOptionalParam<bool>(eventData, "overwrite", initialOverwrite);
+			}*/
+		}
+		inv->addItem(mobileActor, obj, count, overwrite, dataRef);
+		//// Falsely says player has initialCount + count, until another refresh is triggered 
+		//if (count != initialCount) {
+		//	TES3::UI::forcePlayerInventoryUpdate();
+		//	TES3::UI::updateInventoryMenuTiles();
+		//}
+		//char *buffer = mwse::tes3::getThreadSafeStringBuffer();
+		//sprintf(buffer, "Actor: %s, Obj: %s, iniCount: %d, count: %d, overwrite: %d", mobileActor->reference->getName(), obj->getName(),initialCount, count, overwrite);
+		//TES3::UI::logToConsole(buffer, false);
+	}	
+
+	void __fastcall OnItemAddedNoData(TES3::Inventory *inv, void *, TES3::MobileActor * mobileActor, TES3::PhysicalObject *obj, int initialCount, bool initialOverwrite) {
+		int count = initialCount;
+		bool overwrite = initialOverwrite;
+		if (event::ItemAddedEvent::getEventEnabled())
+		{
+			sol::object eventResult = LuaManager::getInstance().getThreadSafeStateHandle().triggerEvent(new event::ItemAddedEvent(mobileActor, obj, initialCount, initialOverwrite, nullptr));
+			//if (eventResult.valid())
+			//{
+			//	sol::table eventData = eventResult;
+			//	count = getOptionalParam<int>(eventData, "count", initialCount);
+			//	overwrite = getOptionalParam<bool>(eventData, "overwrite", initialOverwrite);
+			//}
+		}
+		inv->addItemWithoutData(mobileActor, obj, count, overwrite);
+	}	
+
 	//
 	// Event: Item Dropped.
 	//
@@ -5871,6 +5915,18 @@ namespace mwse::lua {
 		auto bookGetText = &TES3::Book::getBookText;
 		genCallEnforced(0x4A29FA, 0x4A2A90, *reinterpret_cast<DWORD*>(&bookGetText));
 		genCallEnforced(0x4A2A0F, 0x4A2A90, *reinterpret_cast<DWORD*>(&bookGetText));
+
+		// Event: Item Added.
+		genCallEnforced(0x497cbb, 0x498530, reinterpret_cast<DWORD>(OnItemAdded)); // AddItemByReference.
+		genCallEnforced(0x5a6281, 0x498530, reinterpret_cast<DWORD>(OnItemAdded)); // BarterMenu.
+		genCallEnforced(0x5a63a0, 0x498530, reinterpret_cast<DWORD>(OnItemAdded)); // Post BarterMenu Close.
+		genCallEnforced(0x5a65a0, 0x498530, reinterpret_cast<DWORD>(OnItemAdded)); // BarterMenu.
+		//genCallEnforced(0x5b5567, 0x498530, reinterpret_cast<DWORD>(OnItemAdded)); // In Container.
+		genCallEnforced(0x5b5621, 0x498530, reinterpret_cast<DWORD>(OnItemAdded)); // On Container Tile Clicked.
+		//genCallEnforced(0x5b5c11, 0x498530, reinterpret_cast<DWORD>(OnItemAdded)); // In Container.
+
+		genCallEnforced(0x495886, 0x497CD0, reinterpret_cast<DWORD>(OnItemAddedNoData)); // When an Item is added through console/mwscripts.
+		//genCallEnforced(0x5a6545, 0x497CD0, reinterpret_cast<DWORD>(OnItemAddedNoData)); // In Barter Function. Yet to track down.
 
 		// Event: Item Dropped.
 		genCallEnforced(0x49B1DF, 0x4E4510, reinterpret_cast<DWORD>(OnItemDropped_ReferenceCreated)); // Store the last created dropped reference.

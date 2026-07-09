@@ -81,6 +81,7 @@
 #include "LuaInfoLinkResolveEvent.h"
 #include "LuaInfoResponseEvent.h"
 #include "LuaIsGuardEvent.h"
+#include "LuaItemAddedEvent.h"
 #include "LuaItemDroppedEvent.h"
 #include "LuaItemTileUpdatedEvent.h"
 #include "LuaJournalEvent.h"
@@ -272,6 +273,7 @@ namespace mwse::lua::event {
 		usertypeDefinition["infoLinkResolve"] = sol::property(&InfoLinkResolveEvent::getEventEnabled, &InfoLinkResolveEvent::setEventEnabled);
 		usertypeDefinition["infoResponse"] = sol::property(&InfoResponseEvent::getEventEnabled, &InfoResponseEvent::setEventEnabled);
 		usertypeDefinition["isGuard"] = sol::property(&IsGuardEvent::getEventEnabled, &IsGuardEvent::setEventEnabled);
+		usertypeDefinition["itemAdded"] = sol::property(&ItemAddedEvent::getEventEnabled, &ItemAddedEvent::setEventEnabled);
 		usertypeDefinition["itemDropped"] = sol::property(&ItemDroppedEvent::getEventEnabled, &ItemDroppedEvent::setEventEnabled);
 		usertypeDefinition["itemTileUpdated"] = sol::property(&ItemTileUpdatedEvent::getEventEnabled, &ItemTileUpdatedEvent::setEventEnabled);
 		usertypeDefinition["journal"] = sol::property(&JournalEvent::getEventEnabled, &JournalEvent::setEventEnabled);
