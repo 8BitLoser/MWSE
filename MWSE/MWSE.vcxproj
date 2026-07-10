@@ -21,6 +21,7 @@
     <ClInclude Include="LuaCalcHitDetectionConeEvent.h" />
     <ClInclude Include="LuaCalcTouchSpellConeEvent.h" />
     <ClInclude Include="LuaDialogueFilteredEvent.h" />
+    <ClInclude Include="LuaItemAddedEvent.h" />
     <ClInclude Include="LuaKeyframesLoadedEvent.h" />
     <ClInclude Include="LuaMagicAbsorbEvent.h" />
     <ClInclude Include="LuaMagicReflectedEvent.h" />
@@ -567,6 +568,7 @@
     <ClCompile Include="LuaInfoLinkResolveEvent.cpp" />
     <ClCompile Include="LuaInfoResponseEvent.cpp" />
     <ClCompile Include="LuaIsGuardEvent.cpp" />
+    <ClCompile Include="LuaItemAddedEvent.cpp" />
     <ClCompile Include="LuaItemDroppedEvent.cpp" />
     <ClCompile Include="LuaItemTileUpdatedEvent.cpp" />
     <ClCompile Include="LuaJournalEvent.cpp" />
