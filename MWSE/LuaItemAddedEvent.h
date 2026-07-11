@@ -7,7 +7,7 @@ namespace mwse::lua::event
 {
 	class ItemAddedEvent : public ObjectFilteredEvent, public DisableableEvent<ItemAddedEvent> {
 	public:
-		ItemAddedEvent(TES3::MobileActor *actor, TES3::PhysicalObject *obj, int count, bool overwrite, TES3::ItemData **dataRef);
+		ItemAddedEvent(TES3::MobileActor *actor, TES3::PhysicalObject *obj, int count, bool overwrite, TES3::ItemData **dataRef = nullptr);
 		sol::table createEventTable();
 
 	protected:

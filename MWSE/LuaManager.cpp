@@ -3145,21 +3145,53 @@ namespace mwse::lua {
 		if (event::ItemAddedEvent::getEventEnabled()) {
 			sol::object eventResult = LuaManager::getInstance().getThreadSafeStateHandle().triggerEvent(new event::ItemAddedEvent(mobileActor, obj, initialCount, initialOverwrite, dataRef));
 			//// Have to figure out a way to get tiles to update properly before this can be allowed
-			/*if (eventResult.valid()) {
+			if (eventResult.valid()) {
 				sol::table eventData = eventResult;
 				count = getOptionalParam<int>(eventData, "count", initialCount);
 				overwrite = getOptionalParam<bool>(eventData, "overwrite", initialOverwrite);
-			}*/
+			}
 		}
-		inv->addItem(mobileActor, obj, count, overwrite, dataRef);
+		inv->addItem(mobileActor, obj, initialCount, initialOverwrite, dataRef);
 		//// Falsely says player has initialCount + count, until another refresh is triggered 
-		//if (count != initialCount) {
-		//	TES3::UI::forcePlayerInventoryUpdate();
-		//	TES3::UI::updateInventoryMenuTiles();
-		//}
+		if (count != initialCount) {
+			auto stack = inv->findItemStack(obj, dataRef ? *dataRef : nullptr);
+			inv->addItem(mobileActor, obj, count - initialCount, overwrite, dataRef);
+
+			char *buffer = mwse::tes3::getThreadSafeStringBuffer();
+			sprintf(buffer, "Actor: %s, Obj: %s, iniCount: %d, count: %d, overwrite: %d : Stack: %s, %d", mobileActor->reference->getName(), obj->getName(), initialCount, count, overwrite, stack->object->getName(), stack->count);
+			TES3::UI::logToConsole(buffer, false);
+			TES3::UI::updateInventoryMenuTiles();
+		}
+
 		//char *buffer = mwse::tes3::getThreadSafeStringBuffer();
 		//sprintf(buffer, "Actor: %s, Obj: %s, iniCount: %d, count: %d, overwrite: %d", mobileActor->reference->getName(), obj->getName(),initialCount, count, overwrite);
 		//TES3::UI::logToConsole(buffer, false);
+	}	
+	//Inventory*, MobileActor *, Reference *, int *
+	void __fastcall OnItemAddedByReference(TES3::Inventory *inv, void *, TES3::MobileActor *mobileActor, TES3::Reference *ref, int *initialCount) {
+		auto *itemData = ref->getAttachedItemData();
+		// 0x52c40c initialCount seems to get overidden if there is itemData.
+		int count = itemData ? itemData->count : *initialCount;
+		if (event::ItemAddedEvent::getEventEnabled()) {
+			sol::object eventResult = LuaManager::getInstance().getThreadSafeStateHandle().triggerEvent(new event::ItemAddedEvent(mobileActor, static_cast<TES3::PhysicalObject *>(ref->getBaseObject()), count, false, nullptr));
+			if (eventResult.valid()) {
+				sol::table eventData = eventResult;
+				count = getOptionalParam<int>(eventData, "count", count);
+			}
+		}
+
+		if (count != *initialCount) {
+			count = std::max(1, count);
+			//char *buffer = mwse::tes3::getThreadSafeStringBuffer();
+			//sprintf(buffer, "By Ref: Actor: %s, Ref: %s, baseObj: %s, iniCount: %d, count: %d", mobileActor->reference->getName(), ref->getName(), ref->baseObject->getName(), *initialCount, count);
+			//TES3::UI::logToConsole(buffer, false);
+			//TES3::UI::updateInventoryMenuTiles();
+			*initialCount = count;
+			if (itemData != nullptr){
+				itemData->count = count;
+			}
+		}
+		inv->addItemByReference(mobileActor, ref, initialCount);
 	}	
 
 	void __fastcall OnItemAddedNoData(TES3::Inventory *inv, void *, TES3::MobileActor * mobileActor, TES3::PhysicalObject *obj, int initialCount, bool initialOverwrite) {
@@ -5917,7 +5949,11 @@ namespace mwse::lua {
 		genCallEnforced(0x4A2A0F, 0x4A2A90, *reinterpret_cast<DWORD*>(&bookGetText));
 
 		// Event: Item Added.
-		genCallEnforced(0x497cbb, 0x498530, reinterpret_cast<DWORD>(OnItemAdded)); // AddItemByReference.
+
+		/// AddItemByReference 0x497bc0 ---Probably need to hook here for references, AddItem gets confused when you modify stack.count
+
+		genCallEnforced(0x52C441, 0x497BC0, reinterpret_cast<DWORD>(OnItemAddedByReference)); // AddItemByReference.
+		//genCallEnforced(0x497cbb, 0x498530, reinterpret_cast<DWORD>(OnItemAdded)); // AddItemByReference.
 		genCallEnforced(0x5a6281, 0x498530, reinterpret_cast<DWORD>(OnItemAdded)); // BarterMenu.
 		genCallEnforced(0x5a63a0, 0x498530, reinterpret_cast<DWORD>(OnItemAdded)); // Post BarterMenu Close.
 		genCallEnforced(0x5a65a0, 0x498530, reinterpret_cast<DWORD>(OnItemAdded)); // BarterMenu.
@@ -6275,7 +6311,6 @@ namespace mwse::lua {
 		genCallEnforced(0x49582F, 0x497BC0, *reinterpret_cast<DWORD*>(&inventoryAddItemByReference));
 		genCallEnforced(0x49586B, 0x497BC0, *reinterpret_cast<DWORD*>(&inventoryAddItemByReference));
 		genCallEnforced(0x4DDF71, 0x497BC0, *reinterpret_cast<DWORD*>(&inventoryAddItemByReference));
-		genCallEnforced(0x52C441, 0x497BC0, *reinterpret_cast<DWORD*>(&inventoryAddItemByReference));
 		genCallEnforced(0x573E46, 0x497BC0, *reinterpret_cast<DWORD*>(&inventoryAddItemByReference));
 		genCallEnforced(0x5A64CD, 0x497BC0, *reinterpret_cast<DWORD*>(&inventoryAddItemByReference));
 

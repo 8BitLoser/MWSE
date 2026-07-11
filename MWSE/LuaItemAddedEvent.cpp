@@ -31,6 +31,7 @@ namespace mwse::lua::event
 		eventData["itemData"] = m_itemData;
 		eventData["count"] = m_count;
 		eventData["overwrite"] = m_overwrite;
+		eventData["ref"] = nullptr;
 
 		return eventData;
 	}
